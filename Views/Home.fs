@@ -1,54 +1,53 @@
 ﻿namespace HtmxWCSample.Views
 
 open Giraffe
+open Microsoft.AspNetCore.Http
 open Giraffe.ViewEngine
 open HtmxWCSample.BaseViews
 
-module private Home =
+module private Scripts =
+    let private getFullPageScript (content: string) =
+        js
+            $"""
+            window.addEventListener('DOMContentLoaded', () => {{
+                {content}
+            }});
+            """
 
-    module Scripts =
-        let private getFullPageScript (content: string) =
-            js
-                $"""
-                window.addEventListener('DOMContentLoaded', () => {{
-                    {content}
-                }});
-                """
+    let fsMessageClose (inPartial: bool) =
+        let jsScript =
+            let content =
+                js
+                    """
+                    const msgContainer = document.querySelector("#message-container");
 
-        let fsMessageClose (inPartial: bool) =
-            let jsScript =
-                let content =
-                    js
-                        """
-                        const msgContainer = document.querySelector("#message-container");
+                    msgContainer.addEventListener('fs-close-message', (e) => {
+                        e.target.remove();
+                    });
+                    """
 
-                        msgContainer.addEventListener('fs-close-message', (e) => {
-                            e.target.remove();
-                        });
-                        """
+            match inPartial with
+            | false -> getFullPageScript content
+            | true -> content
 
-                match inPartial with
-                | false -> getFullPageScript content
-                | true -> content
+        script [ _defer ] [ rawText jsScript ]
 
-            script [ _defer ] [ rawText jsScript ]
+    let fsTabClose (inPartial: bool) =
+        let jsScript =
+            let content =
+                js
+                    """
+                    const page = document.querySelector(".page");
+                    page.addEventListener('on-fs-tab-close', (e) => {
+                        e.target.remove();
+                    });
+                    """
 
-        let fsTabClose (inPartial: bool) =
-            let jsScript =
-                let content =
-                    js
-                        """
-                        const page = document.querySelector(".page");
-                        page.addEventListener('on-fs-tab-close', (e) => {
-                            e.target.remove();
-                        });
-                        """
+            match inPartial with
+            | false -> getFullPageScript content
+            | true -> content
 
-                match inPartial with
-                | false -> getFullPageScript content
-                | true -> content
-
-            script [ _defer ] [ rawText jsScript ]
+        script [ _defer ] [ rawText jsScript ]
 
 type private Partials() =
     static member Index(?extras: XmlNode list) =
@@ -111,55 +110,44 @@ type private Partials() =
             str $"I'm the tab for {name}"
         ]
 
-open Home
+open Scripts
+open type Partials
 
 type Home() =
     static member Index(?isPartial: bool) : HttpHandler =
-        fun next ctx ->
+        (fun (next, (ctx: HttpContext)) ->
             match isPartial with
             | Some true ->
                 ctx.SetHttpHeader("HX-Push", "/")
 
-                warbler
-                    (fun _ ->
-                        htmlString (
-                            Partials.Index([ Scripts.fsMessageClose true ])
-                            |> RenderView.AsString.htmlNode
-                        ))
-                    next
-                    ctx
+                Index([ fsMessageClose true ])
+                |> RenderView.AsString.htmlNode
+                |> htmlString
             | Some false
-            | None -> htmlView (Layout.Default([ Partials.Index() ], "Home", [ Scripts.fsMessageClose false ])) next ctx
+            | None ->
+                Layout.Default([ Index() ], "Home", [ fsMessageClose false ])
+                |> htmlView)
+        |> warbler
 
 
     static member Tabs(?isPartial: bool) : HttpHandler =
-        fun next ctx ->
+        (fun (next, ctx: HttpContext) ->
             match isPartial with
             | Some true ->
                 ctx.SetHttpHeader("HX-Push", "/server-tabs")
 
-                warbler
-                    (fun _ ->
-                        htmlString (
-                            Partials.Tabs([ Scripts.fsTabClose true ])
-                            |> RenderView.AsString.htmlNode
-                        ))
-                    next
-                    ctx
+                Tabs([ fsTabClose true ])
+                |> RenderView.AsString.htmlNode
+                |> htmlString
             | Some false
             | None ->
-                htmlView
-                    (Layout.Default(
-                        [ Partials.Tabs([ Scripts.fsTabClose false ]) ],
-                        "Tabs",
-                        [ Scripts.fsTabClose false ]
-                    ))
-                    next
-                    ctx
+                Layout.Default([ Tabs([ fsTabClose false ]) ], "Tabs", [ fsTabClose false ])
+                |> htmlView)
+        |> warbler
 
     static member TabContent(tabName: string) : HttpHandler =
-        warbler
-            (fun _ ->
-                Partials.TabForName(tabName)
-                |> RenderView.AsString.htmlNode
-                |> htmlString)
+        (fun _ ->
+            TabForName(tabName)
+            |> RenderView.AsString.htmlNode
+            |> htmlString)
+        |> warbler

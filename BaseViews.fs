@@ -2,82 +2,103 @@
 
 open Giraffe.ViewEngine
 
-[<RequireQualifiedAccess>]
-module private Html =
+module private PartialBaseContent =
     let augmentNodes (nodes: XmlNode list option) (defaults: XmlNode list) =
         nodes
         |> Option.map (fun extras -> List.concat [ defaults; extras ])
         |> Option.orElse (Some defaults)
 
-type Partials() =
-    static member Navbar(?attrs: XmlAttribute list, ?leftLinks: XmlNode list, ?rightLinks: XmlNode list) =
-        let leftLinks =
-            Html.augmentNodes
-                leftLinks
-                [ a [ _hxGet "/partials/"
-                      _hxTarget "main"
-                      _class "navbar-item" ] [
+    let NavBar =
+        lazy
+            (nav [ _class "navbar" ] [
+                section [ _class "navbar-brand" ] [
+                    a [ _class "navbar-burger" ] [
+                        span [ attr "aria-hidden" "true" ] []
+                        span [ attr "aria-hidden" "true" ] []
+                        span [ attr "aria-hidden" "true" ] []
+                    ]
+                ]
+                section [ _class "navbar-menu" ] [
+                    section [ _class "navbar-start" ] [
+                        a [ _hxGet "/partials/"
+                            _hxTarget "main"
+                            _class "navbar-item" ] [
+                            str "Home"
+                        ]
+                        a [ _hxGet "/partials/server-tabs"
+                            _hxTarget "main"
+                            _class "navbar-item" ] [
+                            str "Tabs Example"
+                        ]
+                    ]
+                ]
+             ])
+
+    let OffCanvas (offCanvasContent: XmlNode list option) =
+        let offCanvasContent = defaultArg offCanvasContent []
+
+        fsOffCanvas [ _closable ] [
+            h3 [ _slot "header-text" ] [
+                str "Web Components from the server"
+            ]
+            h4 [] [
+                str "Enhanced on the client side!"
+            ]
+            ul [] [
+                a [ _hxGet "/partials/"
+                    _hxTarget "main"
+                    _class "navbar-item" ] [
                     str "Home"
-                  ]
-                  a [ _hxGet "/partials/server-tabs"
-                      _hxTarget "main"
-                      _class "navbar-item" ] [
-                      str "Tabs Example"
-                  ] ]
-
-        let attrs = defaultArg attrs []
-        let left = defaultArg leftLinks []
-        let right = defaultArg rightLinks []
-
-        nav [ yield! attrs; _class "navbar" ] [
-            section [ _class "navbar-brand" ] [
-                a [ _class "navbar-burger" ] [
-                    span [ attr "aria-hidden" "true" ] []
-                    span [ attr "aria-hidden" "true" ] []
-                    span [ attr "aria-hidden" "true" ] []
+                ]
+                a [ _hxGet "/partials/server-tabs"
+                    _hxTarget "main"
+                    _class "navbar-item" ] [
+                    str "Tabs Example"
                 ]
             ]
-            section [ _class "navbar-menu" ] [
-                section [ _class "navbar-start" ] [
-                    yield! left
-                ]
-                section [ _class "navbar-end" ] [
-                    yield! right
-                ]
-            ]
+            yield! offCanvasContent
         ]
 
-type Layout() =
-
-    static member DefaultStyles() : XmlNode list =
+    let DefaultStyles () : XmlNode list =
         [ link [ _rel "stylesheet"
                  _href "https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" ]
           link [ _rel "stylesheet"
                  _href "/css/styles.css" ] ]
 
-    static member DefaultScripts() : XmlNode list =
-        [ script [ _type "module" ] [
-            rawText (
-                js
-                    """
-                    import { registerAll } from 'https://cdn.skypack.dev/pin/fsharp-components@v0.0.4-vrcdq1fAiAHCYER7N99I/mode=imports,min/optimized/fsharp-components.js';
-                    registerAll();
-                    """
-            )
-          ]
-          script [ _type "module"; _src "/js/index.js" ] [] ]
+    let DefaultScripts () : XmlNode list =
+        [ script [ _type "module"; _src "/js/index.js" ] [] ]
 
-    static member Default(content: XmlNode list, ?_title: string, ?scripts: XmlNode list, ?styles: XmlNode list) =
+open PartialBaseContent
+
+type Layout() =
+
+    /// <summary>
+    /// This is the default layout for this application.
+    /// Most of the time it will be used only for the first load, anything after
+    /// will be requested to the server.
+    /// </summary>
+    /// <param name="content">The content to be rendered inside the `main` tag</param>
+    /// <param name="offCanvasContent">Extra nodes to render in the offcanvas piece.</param>
+    /// <param name="styles">Any extra style that any particular page might require</param>
+    /// <param name="scripts">any extra script that a particular page may require</param>
+    /// <param name="_title">A title to assign to the document's head</param>
+    static member Default
+        (
+            content: XmlNode list,
+            ?_title: string,
+            ?scripts: XmlNode list,
+            ?styles: XmlNode list,
+            ?offCanvasContent: XmlNode list
+        ) =
         let _title = defaultArg _title "Welcome"
 
         let scripts =
-            Html.augmentNodes scripts (Layout.DefaultScripts())
+            augmentNodes scripts (DefaultScripts())
             |> Option.defaultValue []
 
         let styles =
-            Html.augmentNodes styles (Layout.DefaultStyles())
+            augmentNodes styles (DefaultStyles())
             |> Option.defaultValue []
-
 
         html [ _lang "en-US" ] [
             head [] [
@@ -94,33 +115,8 @@ type Layout() =
                          _src "https://unpkg.com/construct-style-sheets-polyfill" ] []
             ]
             body [] [
-                /// use our helper tags from `Extensions.fs`
-                Partials.Navbar()
-                fsOffCanvas [ _closable ] [
-                    h3 [ _slot "header-text" ] [
-                        str "Web Components from the server"
-                    ]
-                    h4 [] [
-                        str "Enhanced on the client side!"
-                    ]
-                    ul [] [
-                        a [ _hxGet "/partials/"
-                            _hxTarget "main"
-                            _class "navbar-item" ] [
-                            str "Home"
-                        ]
-                        a [ _hxGet "/partials/server-tabs"
-                            _hxTarget "main"
-                            _class "navbar-item" ] [
-                            str "Tabs Example"
-                        ]
-                    ]
-                    ul [] [
-                        li [] [ str "Content!" ]
-                        li [] [ str "From the server!" ]
-                        li [] [ str "Neat right?!" ]
-                    ]
-                ]
+                NavBar.Value
+                OffCanvas offCanvasContent
                 main [] [ yield! content ]
                 yield! scripts
             ]
@@ -129,6 +125,7 @@ type Layout() =
     static member NotFound(?content: XmlNode list) =
         Layout.Default(
             content
-            |> Option.defaultValue [ Partials.Navbar()
+            |> Option.defaultValue [ NavBar.Value
+                                     OffCanvas None
                                      str "Not Found" ]
         )

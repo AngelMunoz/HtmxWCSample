@@ -5,21 +5,21 @@ open Saturn
 open Saturn.Endpoint
 open HtmxWCSample.Views
 
-let browser =
+let browserPipeline =
     pipeline {
         plug acceptHtml
         plug putSecureBrowserHeaders
         set_header "x-pipeline-type" "Browser"
     }
 
-let htmlApi =
+let htmlApiPipeline =
     pipeline {
         plug putSecureBrowserHeaders
         plug (requireHeader "HX-Request" "true")
         set_header "x-pipeline-type" "HtmlApi"
     }
 
-let partialPipeline =
+let partialsPipeline =
     pipeline {
         plug putSecureBrowserHeaders
         plug (requireHeader "HX-Request" "true")
@@ -28,7 +28,7 @@ let partialPipeline =
 
 let browserRouter =
     router {
-        pipe_through browser
+        pipe_through browserPipeline
         get "/" (Home.Index())
         get "/index.html" (redirectTo false "/")
         get "/default.html" (redirectTo false "/")
@@ -36,9 +36,9 @@ let browserRouter =
     }
 
 // basically a copy of the browserRouter, but returning partials instead of full pages
-let partials =
+let partialsRouter =
     router {
-        pipe_through partialPipeline
+        pipe_through partialsPipeline
         get "/" (Home.Index(true))
         get "/server-tabs" (Home.Tabs(true))
         getf "/tab-content/%s" Home.TabContent
@@ -47,7 +47,7 @@ let partials =
 
 let apiRouter =
     router {
-        pipe_through htmlApi
+        pipe_through htmlApiPipeline
         post "/server-messages" (Messages.RandomMessage())
         post "/new-tab" (Tabs.NewTab())
 
@@ -56,7 +56,7 @@ let apiRouter =
 let appRouter =
     router {
         forward "" browserRouter
-        forward "/partials" partials
+        forward "/partials" partialsRouter
         forward "/api" apiRouter
     }
 

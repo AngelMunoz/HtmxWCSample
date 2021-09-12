@@ -2,13 +2,11 @@
 module Extensions
 
 open Giraffe.ViewEngine
-open System
 
 // get VSCode support for JavaScript strings with
 // https://github.com/alfonsogarciacaro/vscode-template-fsharp-highlight
 // https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight
 let js (js: string) = js
-let fmt_js (s: FormattableString) = s
 
 // add strong typing for your web components' attributes and tags
 
@@ -27,15 +25,23 @@ type Kind =
 
 // register your tags
 let fsOffCanvas = tag "fs-off-canvas"
-
 let fsMessage = tag "fs-message"
-
 let fsTabHost = tag "fs-tab-host"
 let fsTabItem = tag "fs-tab-item"
 
-let _slot = attr "slot"
-
 // regiser your attributes
+
+// HTMX helpers
+let _hxGet = attr "hx-get"
+let _hxPost = attr "hx-post"
+let _hxPut = attr "hx-put"
+let _hxPushUrl = attr "hx-push-url" "true"
+let _hxDelete = attr "hx-delete"
+let _hxTarget = attr "hx-target"
+let _hxSwap = attr "hx-swap"
+
+// fs-components attributes
+
 let _isOpen = attr "is-open" ""
 let _closable = attr "closable" ""
 let _isSelected = attr "is-selected" ""
@@ -69,12 +75,4 @@ let _fsKind (value: Kind) =
 
     attr "kind" kind
 
-// HTMX helpers
-
-let _hxGet = attr "hx-get"
-let _hxPost = attr "hx-post"
-let _hxPut = attr "hx-put"
-let _hxPushUrl = attr "hx-push-url" "true"
-let _hxDelete = attr "hx-delete"
-let _hxTarget = attr "hx-target"
-let _hxSwap = attr "hx-swap"
+let _slot = attr "slot"

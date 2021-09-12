@@ -3,6 +3,13 @@ namespace HtmxWCSample
 open Giraffe
 open Giraffe.ViewEngine
 
+
+(*
+    Modules here are just part of the public API they should deliever only HTML strings
+    these functions handle routes from the apiRouter router
+    in this case we will simulate the results with random predetermined responses
+*)
+
 [<RequireQualifiedAccess>]
 module Tabs =
     let private random = System.Random()
@@ -33,8 +40,8 @@ module Tabs =
                 let name = tabName ()
 
                 fsTabItem [ _fsKind (kind ())
-                            _fsTabItemLabel (name)
-                            _fsTabItemTabName (name)
+                            _fsTabItemLabel name
+                            _fsTabItemTabName name
                             _hxGet $"/partials/tab-content/{name}"
                             _hxTarget "#tab-content"
                             _isClosable ] []

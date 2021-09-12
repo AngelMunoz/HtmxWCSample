@@ -67,3 +67,9 @@ fs-off-canvas {
 fs-off-canvas:not([is-open]) {
   display: none;
 }
+
+#tab-bar .always-last {
+  position: relative;
+  right: 0;
+  justify-self: flex-end;
+}

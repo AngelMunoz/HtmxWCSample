@@ -68,3 +68,13 @@ let _fsKind (value: Kind) =
         | Default -> ""
 
     attr "kind" kind
+
+// HTMX helpers
+
+let _hxGet = attr "hx-get"
+let _hxPost = attr "hx-post"
+let _hxPut = attr "hx-put"
+let _hxPushUrl = attr "hx-push-url" "true"
+let _hxDelete = attr "hx-delete"
+let _hxTarget = attr "hx-target"
+let _hxSwap = attr "hx-swap"

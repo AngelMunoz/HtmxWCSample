@@ -14,7 +14,9 @@ type Partials() =
         let leftLinks =
             Html.augmentNodes
                 leftLinks
-                [ a [ _href "/"; _class "navbar-item" ] [
+                [ a [ _hxGet "/partials/"
+                      _hxTarget "main"
+                      _class "navbar-item" ] [
                       str "Home"
                   ] ]
 
@@ -79,15 +81,32 @@ type Layout() =
                        _content "width=device-width, initial-scale=1" ]
                 title [] [ str $"{_title} | Saturn" ]
                 yield! styles
+                // Add HTMX
                 script [ _type "module"
                          _src "https://unpkg.com/htmx.org@1.5.0" ] []
+                // Add Constructed Stylesheets Polyfill for fs-components
                 script [ _type "module"
                          _src "https://unpkg.com/construct-style-sheets-polyfill" ] []
             ]
             body [] [
+                /// use our helper tags from `Extensions.fs`
                 fsOffCanvas [ _closable ] [
                     h3 [ _slot "header-text" ] [
-                        str "fs-components in a Server Side Rendered Website!"
+                        str "Web Components from the server"
+                    ]
+                    h4 [] [
+                        str "Enhanced on the client side!"
+                    ]
+                    ul [] [
+                        a [ _hxGet "/partials/"
+                            _hxTarget "main"
+                            _class "navbar-item" ] [
+                            str "Home"
+                        ]
+                        a [ _hxGet "/partials/server-tabs"
+                            _hxTarget "main" ] [
+                            str "Tabs Example"
+                        ]
                     ]
                     ul [] [
                         li [] [ str "Content!" ]
@@ -95,7 +114,7 @@ type Layout() =
                         li [] [ str "Neat right?!" ]
                     ]
                 ]
-                yield! content
+                main [] [ yield! content ]
                 yield! scripts
             ]
         ]

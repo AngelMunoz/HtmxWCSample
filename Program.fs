@@ -9,7 +9,6 @@ let browser =
     pipeline {
         plug acceptHtml
         plug putSecureBrowserHeaders
-        plug fetchSession
         set_header "x-pipeline-type" "Browser"
     }
 
@@ -20,29 +19,44 @@ let htmlApi =
         set_header "x-pipeline-type" "HtmlApi"
     }
 
-let defaultView =
-    router {
-        get "/" (htmlView (Home.Index()))
-        get "/index.html" (redirectTo false "/")
-        get "/default.html" (redirectTo false "/")
+let partialPipeline =
+    pipeline {
+        plug putSecureBrowserHeaders
+        plug (requireHeader "HX-Request" "true")
+        set_header "x-pipeline-type" "Partials"
     }
 
 let browserRouter =
     router {
         pipe_through browser
-
-        forward "" defaultView
+        get "/" (Home.Index())
+        get "/index.html" (redirectTo false "/")
+        get "/default.html" (redirectTo false "/")
+        get "/server-tabs" (Home.Tabs())
     }
+
+// basically a copy of the browserRouter, but returning partials instead of full pages
+let partials =
+    router {
+        pipe_through partialPipeline
+        get "/" (Home.Index(true))
+        get "/server-tabs" (Home.Tabs(true))
+        getf "/tab-content/%s" Home.TabContent
+    }
+
 
 let apiRouter =
     router {
         pipe_through htmlApi
-        post "/server-messages" (warbler (fun _ -> htmlView (Messages.RandomMessage())))
+        post "/server-messages" (Messages.RandomMessage())
+        post "/new-tab" (Tabs.NewTab())
+
     }
 
 let appRouter =
     router {
         forward "" browserRouter
+        forward "/partials" partials
         forward "/api" apiRouter
     }
 

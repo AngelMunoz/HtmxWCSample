@@ -17,7 +17,12 @@ type Partials() =
                 [ a [ _hxGet "/partials/"
                       _hxTarget "main"
                       _class "navbar-item" ] [
-                      str "Home"
+                    str "Home"
+                  ]
+                  a [ _hxGet "/partials/server-tabs"
+                      _hxTarget "main"
+                      _class "navbar-item" ] [
+                      str "Tabs Example"
                   ] ]
 
         let attrs = defaultArg attrs []
@@ -90,6 +95,7 @@ type Layout() =
             ]
             body [] [
                 /// use our helper tags from `Extensions.fs`
+                Partials.Navbar()
                 fsOffCanvas [ _closable ] [
                     h3 [ _slot "header-text" ] [
                         str "Web Components from the server"
@@ -104,7 +110,8 @@ type Layout() =
                             str "Home"
                         ]
                         a [ _hxGet "/partials/server-tabs"
-                            _hxTarget "main" ] [
+                            _hxTarget "main"
+                            _class "navbar-item" ] [
                             str "Tabs Example"
                         ]
                     ]

@@ -7,8 +7,8 @@
   <ItemGroup>
     <Compile Include="Extensions.fs" />
     <Compile Include="BaseViews.fs" />
-    <Compile Include="Views\Home.fs" />
     <Compile Include="HtmlApi.fs" />
+    <Compile Include="Views\Home.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   
